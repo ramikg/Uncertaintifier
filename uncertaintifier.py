@@ -10,20 +10,29 @@ DEC_ACTION_NAME = DEC_ACTION_DESCRIPTION = 'Decrease uncertainty'
 DEC_ACTION_HOTKEY = 'Ctrl-Alt-/'
 
 
-class UncertaintifierFailedGettingVariableNameError(Exception):
+class UncertaintifierFailedGettingVariableError(Exception):
     pass
 
 
 def _get_lvar(widget):
     vdui = ida_hexrays.get_widget_vdui(widget)
-    return vdui.item.get_lvar()
+    if vdui is not None:
+        lvar = vdui.item.get_lvar()
+        if lvar is not None:
+            return lvar
+
+    raise UncertaintifierFailedGettingVariableError()
 
 
 def _is_pseudocode_lvar(widget):
     if ida_kernwin.get_widget_type(widget) != ida_kernwin.BWN_PSEUDOCODE:
         return False
 
-    return _get_lvar(widget) is not None
+    try:
+        _get_lvar(widget)
+        return True
+    except UncertaintifierFailedGettingVariableError:
+        return False
 
 
 class QuestionMarkAdderRemover(ida_kernwin.action_handler_t):
@@ -42,9 +51,9 @@ class QuestionMarkAdderRemover(ida_kernwin.action_handler_t):
     def _get_lvar_name(ctx):
         try:
             return _get_lvar(ctx.widget).name
-        except AttributeError:
+        except UncertaintifierFailedGettingVariableError:
             print('Failed getting highlighted variable name. Please try again.')
-            raise UncertaintifierFailedGettingVariableNameError()
+            raise
 
     @staticmethod
     def _rename_lvar(ctx, new_name):
@@ -60,7 +69,7 @@ class QuestionMarkAdder(QuestionMarkAdderRemover):
     def activate(self, ctx):
         try:
             old_name = self._get_lvar_name(ctx)
-        except UncertaintifierFailedGettingVariableNameError:
+        except UncertaintifierFailedGettingVariableError:
             return
 
         self._rename_lvar(ctx, old_name + self.QUESTION_MARK)
@@ -70,7 +79,7 @@ class QuestionMarkRemover(QuestionMarkAdderRemover):
     def activate(self, ctx):
         try:
             old_name = self._get_lvar_name(ctx)
-        except UncertaintifierFailedGettingVariableNameError:
+        except UncertaintifierFailedGettingVariableError:
             return
 
         assert old_name.endswith(self.QUESTION_MARK)
