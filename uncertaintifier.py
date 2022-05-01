@@ -99,6 +99,8 @@ class Uncertaintifier(ida_idaapi.plugin_t):
     wanted_name = 'Uncertaintifier'
     wanted_hotkey = ''
 
+    _hooks = ContextMenuHooks()
+
     def init(self):
         question_mark_adder_desc = ida_kernwin.action_desc_t(INC_ACTION_NAME,
                                                              INC_ACTION_DESCRIPTION,
@@ -113,9 +115,7 @@ class Uncertaintifier(ida_idaapi.plugin_t):
         ida_kernwin.register_action(question_mark_remover_desc)
 
         if REGISTER_CONTEXT_MENU_ITEMS:
-            global hooks
-            hooks = ContextMenuHooks()
-            hooks.hook()
+            self._hooks.hook()
 
         return ida_idaapi.PLUGIN_KEEP
 
