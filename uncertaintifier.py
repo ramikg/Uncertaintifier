@@ -123,7 +123,7 @@ class Uncertaintifier(ida_idaapi.plugin_t):
         pass
 
     def term(self):
-        pass
+        self._hooks.unhook()
 
 
 def PLUGIN_ENTRY():
